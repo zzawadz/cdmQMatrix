@@ -2,7 +2,5 @@
 
 export(fitQmat)
 export(getQError)
-import(iterpc)
-import(plyr)
 importFrom(graphics,matplot)
 importFrom(stats,runif)

@@ -8,7 +8,6 @@
 #' @export
 #' @importFrom stats runif
 #' @importFrom graphics matplot
-#' @import plyr
 #' 
 #' @examples
 #' 
@@ -124,7 +123,6 @@ fitQmat <-
 #' @param freq frequency of unique scores.
 #'
 #' @export
-#' @import iterpc
 #'
 #' @examples
 getQError <- function(qmat, unique.scores, freq) {

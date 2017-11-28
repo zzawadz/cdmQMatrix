@@ -4,6 +4,8 @@ Title: What the Package Does (one line, title case)
 Description: What the package does (one paragraph).
 Authors@R: person("First", "Last", , "first.last@example.com", c("aut", "cre"))
 License: MIT + file LICENSE
+URL: https://github.com/zzawadz/cdmQMatrix
+BugReports: https://github.com/zzawadz/cdmQMatrix/issues
 Encoding: UTF-8
 LazyData: true
 ByteCompile: true
