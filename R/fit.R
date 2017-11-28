@@ -1,3 +1,17 @@
+#' Fit Q Matrix
+#'
+#' @param concepts.no number of concepts to fit
+#' @param scores table containing the students scores
+#' @param scores.test validation set.
+#' @param verbose if true, some additional information will be printed.
+#'
+#' @export
+#' @importFrom stats runif
+#' @importFrom graphics matplot
+#' @import plyr
+#' 
+#' @examples
+#' 
 fitQmat <-
   function(concepts.no,
            scores,
@@ -6,14 +20,14 @@ fitQmat <-
     count.scores <- plyr::count(scores, vars = colnames(scores))
     freq <- count.scores$freq
     unique.scores <-
-      count.scores[, -ncol(count.scores)] %>% as.matrix()
+      as.matrix(count.scores[, -ncol(count.scores)])
     
     
     count.scores.test <-
       plyr::count(scores.test, vars = colnames(scores.test))
     freq.test <- count.scores.test$freq
     unique.scores.test <-
-      count.scores.test[, -ncol(count.scores.test)] %>% as.matrix()
+      as.matrix(count.scores.test[, -ncol(count.scores.test)])
     
     delta <- 0.1
     questions.no <- ncol(unique.scores)
@@ -103,7 +117,16 @@ fitQmat <-
     list(final.mat = final.mat, error = current.error)
   }
 
-############
+#' Get error for given Q-matrix
+#'
+#' @param qmat q-matrix
+#' @param unique.scores unique scores 
+#' @param freq frequency of unique scores.
+#'
+#' @export
+#' @import iterpc
+#'
+#' @examples
 getQError <- function(qmat, unique.scores, freq) {
   n.co <- nrow(qmat)
   
