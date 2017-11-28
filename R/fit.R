@@ -15,7 +15,7 @@ fitQmat <-
     unique.scores.test <-
       count.scores.test[, -ncol(count.scores.test)] %>% as.matrix()
     
-    delta = 0.1
+    delta <- 0.1
     questions.no <- ncol(unique.scores)
     qmat <- matrix(round(runif(concepts.no * questions.no), 1),
                    nrow = concepts.no,
@@ -30,8 +30,8 @@ fitQmat <-
     for (i in 1:50) {
       keep.going <- FALSE
       
-      for (j in 1:nrow(qmat)) {
-        for (k in 1:ncol(qmat)) {
+      for (j in seq_len(nrow(qmat))) {
+        for (k in seq_len(ncol(qmat))) {
           kk <- qmat[j, k]
           
           if (!isTRUE(all.equal(kk, 1))) {
@@ -120,7 +120,7 @@ getQError <- function(qmat, unique.scores, freq) {
   idr[idr > 1] <- 1
   idr <- t(1 - idr)
   
-  sum(vapply(1:nrow(unique.scores), FUN.VALUE = 0.0, function(i) {
+  sum(vapply(seq_len(nrow(unique.scores)), FUN.VALUE = 0.0, function(i) {
     a <- unique.scores[i, ]
     min(colSums(abs(a - idr))) * freq[[i]]
   }))
