@@ -13,7 +13,8 @@
 #' 
 #' library(ltm)
 #' data("WIRS")
-#' scores <- WIRS
+#' 
+#' fitQmat(WIRS, verbose = TRUE)
 #' 
 fitQmat <-
   function(scores,
@@ -22,10 +23,12 @@ fitQmat <-
            delta = 0.1,
            qmat = NULL,
            niter = 50,
+           init.method = c("NMF", "random"),
            verbose = FALSE) {
     
     # It seems that plyr has a problem with strange column names.
     # The easiest solution is to remove old colnames
+    orgColNames <- colnames(scores)
     colnames(scores) <- paste0("V", seq_len(ncol(scores)))
     colnames(scores.test) <- paste0("V", seq_len(ncol(scores.test)))
     
@@ -42,15 +45,30 @@ fitQmat <-
     
     questions.no <- ncol(unique.scores)
     
+    # Number of significant digits in delta
+    ndig <- nchar(strsplit(as.character(delta), split = "\\.")[[1]][[2]])
+    
     if(is.null(qmat)) {
       
-      ndig <- nchar(strsplit(as.character(delta), split = "\\.")[[1]][[2]])
-      qmat <- matrix(round(runif(concepts.no * questions.no), ndig),
-                     nrow = concepts.no,
-                     ncol = questions.no)
+      init.method <- init.method[[1]]
+      if(init.method == "random") {
+        qmat <- matrix(round(runif(concepts.no * questions.no), ndig),
+                       nrow = concepts.no,
+                       ncol = questions.no)
+      } else if(init.method == "NMF") {
+        
+        fit <- nmf(scores + 0.00001, concepts.no)
+        qmat <- pmin(coef(fit), 1)
+                
+      } else {
+        stop("Please select initialization method from 'NMF' or 'random'")
+      }
+      
+      qmat <- round(qmat, ndig)
+      
     } else {
-      if(ncol(qmat) == concepts.no) stop("")
-      if(nrow(qmat) == questions.no) stop("")
+      if(nrow(qmat) == concepts.no) stop("")
+      if(ncol(qmat) == questions.no) stop("")
       qmat <- t(qmat)
     }
     
@@ -67,15 +85,14 @@ fitQmat <-
         for (k in seq_len(ncol(qmat))) {
           kk <- qmat[j, k]
           
-          if (!isTRUE(all.equal(kk, 1))) {
+          if ((1 - kk) > delta / 10) {
+            
             qmat.tmp <- qmat
             qmat.tmp[j, k]  <- qmat.tmp[j, k] + delta
             
             err <- getQError(qmat = qmat.tmp, unique.scores, freq = freq)
             
             if (err < current.error) {
-              if (verbose) cat(err," Cr: ", current.error, " j: ", j, " k: ", k," Plus\n")
-              
               current.error <- err
               final.mat <- qmat <- qmat.tmp
               keep.going <- TRUE
@@ -83,15 +100,13 @@ fitQmat <-
             
           }
           
-          if (!isTRUE(all.equal(kk, 0))) {
+          if (kk > delta / 10) {
             qmat.tmp <- qmat
             qmat.tmp[j, k]  <- qmat.tmp[j, k] - delta
             
             err <-
               getQError(qmat = qmat.tmp, unique.scores, freq = freq)
             if (err < current.error) {
-              if (verbose) cat(err, " Cr: ", current.error, " j: ", j, " k: ", k, " Minus\n")
-              
               current.error <- err
               final.mat <- qmat <- qmat.tmp
               keep.going <- TRUE
@@ -112,8 +127,21 @@ fitQmat <-
       
     }
     
-    list(final.mat = t(final.mat), error = current.error)
-  }
+    test.error <- getQError(qmat = final.mat, unique.scores.test, freq = freq.test)
+    train.error <- getQError(qmat = final.mat, unique.scores, freq = freq)
+    
+    colnames(final.mat) <- orgColNames
+    rownames(final.mat) <- paste0("Item", seq_len(nrow(final.mat)))
+    result <- list(
+      final.mat = round(final.mat, digits = ndig), 
+      train.error = train.error, 
+      test.error = test.error, 
+      errors = as.numeric(na.omit(errors)), 
+      test.erros = as.numeric(na.omit(test.erros)))
+    
+    attr(result, which = "class") <- "CDMQMat"
+    result
+}
 
 #' Get error for given Q-matrix
 #'
