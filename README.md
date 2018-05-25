@@ -17,6 +17,14 @@ devtools::install_github("zzawadz/cdmQMatrix")
 
 This is a basic example which shows you how to solve a common problem:
 
-``` r
-## basic example code
+```r
+## basic example
+library(ltm)
+library(cdmQMatrix)
+data("WIRS")
+ 
+fitQmat(WIRS, verbose = TRUE)$final.mat
+#       Item 1 Item 2 Item 3 Item 4 Item 5 Item 6
+# Item1      1      0      1      0      1      1
+# Item2      0      0      0      1      0      1
 ```
