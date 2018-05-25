@@ -2,7 +2,7 @@
 
 ## Why package?
 
-I don't remember. I think that I had to estimate a Q-Matrix for a Cognitive Diagnostic Model.  I probably hooked on a one, very speficif algorithm, and because I was unable to find it's implementation in R I created my own. But the problem is, that there are better algorithms implemented in existing R packages. Here are some references (I wish I had used one of them):
+I don't remember. I think that I had to estimate a Q-Matrix for a Cognitive Diagnostic Model.  I probably hooked on a one, very specific algorithm, and because I was unable to find it's implementation in R I created my own. But the problem is, that there are better algorithms implemented in existing R packages. Here are some references (I wish I had used one of them):
 
 - https://www.jstatsoft.org/index.php/jss/article/view/v074i02/v74i02.pdf - link to the description of the CDM package from the Journal of Statistical Software.
 - http://pareonline.net/getvn.asp?v=20&n=11 - another paper about CDM package.
