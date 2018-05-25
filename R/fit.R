@@ -1,8 +1,8 @@
 #' Fit Q Matrix
 #'
-#' @param concepts.no number of concepts to fit
 #' @param scores table containing the students scores
 #' @param scores.test validation set.
+#' @param concepts.no number of concepts to fit
 #' @param verbose if true, some additional information will be printed.
 #'
 #' @export
@@ -11,16 +11,28 @@
 #' 
 #' @examples
 #' 
+#' library(ltm)
+#' data("WIRS")
+#' scores <- WIRS
+#' 
 fitQmat <-
-  function(concepts.no,
-           scores,
-           scores.test,
+  function(scores,
+           scores.test = scores,
+           concepts.no = 2,
+           delta = 0.1,
+           qmat = NULL,
+           niter = 50,
            verbose = FALSE) {
+    
+    # It seems that plyr has a problem with strange column names.
+    # The easiest solution is to remove old colnames
+    colnames(scores) <- paste0("V", seq_len(ncol(scores)))
+    colnames(scores.test) <- paste0("V", seq_len(ncol(scores.test)))
+    
     count.scores <- plyr::count(scores, vars = colnames(scores))
     freq <- count.scores$freq
     unique.scores <-
       as.matrix(count.scores[, -ncol(count.scores)])
-    
     
     count.scores.test <-
       plyr::count(scores.test, vars = colnames(scores.test))
@@ -28,19 +40,27 @@ fitQmat <-
     unique.scores.test <-
       as.matrix(count.scores.test[, -ncol(count.scores.test)])
     
-    delta <- 0.1
     questions.no <- ncol(unique.scores)
-    qmat <- matrix(round(runif(concepts.no * questions.no), 1),
-                   nrow = concepts.no,
-                   ncol = questions.no)
+    
+    if(is.null(qmat)) {
+      
+      ndig <- nchar(strsplit(as.character(delta), split = "\\.")[[1]][[2]])
+      qmat <- matrix(round(runif(concepts.no * questions.no), ndig),
+                     nrow = concepts.no,
+                     ncol = questions.no)
+    } else {
+      if(ncol(qmat) == concepts.no) stop("")
+      if(nrow(qmat) == questions.no) stop("")
+      qmat <- t(qmat)
+    }
     
     current.error <-
       getQError(qmat = qmat, unique.scores, freq = freq)
     final.mat <- qmat
     
-    test.erros <- errors <- rep(NA, 50)
+    test.erros <- errors <- rep(NA, niter)
     
-    for (i in 1:50) {
+    for (i in seq_len(niter)) {
       keep.going <- FALSE
       
       for (j in seq_len(nrow(qmat))) {
@@ -51,19 +71,11 @@ fitQmat <-
             qmat.tmp <- qmat
             qmat.tmp[j, k]  <- qmat.tmp[j, k] + delta
             
-            err <-
-              getQError(qmat = qmat.tmp, unique.scores, freq = freq)
+            err <- getQError(qmat = qmat.tmp, unique.scores, freq = freq)
+            
             if (err < current.error) {
-              if (verbose) {
-                cat(err,
-                    " Cr: ",
-                    current.error,
-                    " j: ",
-                    j,
-                    " k: ",
-                    k,
-                    " Plus\n")
-              }
+              if (verbose) cat(err," Cr: ", current.error, " j: ", j, " k: ", k," Plus\n")
+              
               current.error <- err
               final.mat <- qmat <- qmat.tmp
               keep.going <- TRUE
@@ -78,16 +90,8 @@ fitQmat <-
             err <-
               getQError(qmat = qmat.tmp, unique.scores, freq = freq)
             if (err < current.error) {
-              if (verbose) {
-                cat(err,
-                    " Cr: ",
-                    current.error,
-                    " j: ",
-                    j,
-                    " k: ",
-                    k,
-                    " Minus\n")
-              }
+              if (verbose) cat(err, " Cr: ", current.error, " j: ", j, " k: ", k, " Minus\n")
+              
               current.error <- err
               final.mat <- qmat <- qmat.tmp
               keep.going <- TRUE
@@ -98,22 +102,17 @@ fitQmat <-
       
       
       errors[[i]]     <- current.error
-      test.erros[[i]] <-
-        getQError(qmat = qmat.tmp, unique.scores.test, freq = freq.test)
+      test.erros[[i]] <- getQError(qmat = final.mat, unique.scores.test, freq = freq.test)
       
       if (verbose) {
-        matplot(cbind(errors, test.erros),
-                type = "l",
-                lwd = 2)
+        matplot(cbind(errors, test.erros), type = "l", lwd = 2, ylab = "Error", xlab = "Iteration")
       }
       
-      if (!keep.going)
-        break
+      if (!keep.going) break
       
-      print(i)
     }
     
-    list(final.mat = final.mat, error = current.error)
+    list(final.mat = t(final.mat), error = current.error)
   }
 
 #' Get error for given Q-matrix
