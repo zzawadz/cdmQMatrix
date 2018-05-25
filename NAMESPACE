@@ -2,5 +2,9 @@
 
 export(fitQmat)
 export(getQError)
+export(getUniqueAnswersFreqs)
+importFrom(NMF,coef)
+importFrom(NMF,nmf)
 importFrom(graphics,matplot)
+importFrom(stats,na.omit)
 importFrom(stats,runif)

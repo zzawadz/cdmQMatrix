@@ -3,18 +3,31 @@
 #' @param scores table containing the students scores
 #' @param scores.test validation set.
 #' @param concepts.no number of concepts to fit
+#' @param delta step size for matrix exploration.
+#' @param qmat predefined qmatrix. If NULL (default) it will be initialized with one of the predefined methods.
+#' @param niter maximum number of iteration.
+#' @param init.method if qmat is null it will be created using one of the two methods - 'NMF'
+#'        is based on Nonnegative Matrix Factorization or 'random' which is a random matrix.
 #' @param verbose if true, some additional information will be printed.
 #'
 #' @export
 #' @importFrom stats runif
 #' @importFrom graphics matplot
 #' 
+#' @importFrom NMF nmf
+#' @importFrom NMF coef
+#' @importFrom stats na.omit
 #' @examples
 #' 
 #' library(ltm)
 #' data("WIRS")
 #' 
 #' fitQmat(WIRS, verbose = TRUE)
+#' 
+#' # Predefined matrix initialized with 0
+#' fitQmat(WIRS, concepts.no = 2, qmat = matrix(0, ncol(WIRS), nrow = 2),verbose = TRUE)
+#' # Predefined matrix initialized with 1
+#' fitQmat(WIRS, concepts.no = 2, qmat = matrix(1, ncol(WIRS), nrow = 2),verbose = TRUE)
 #' 
 fitQmat <-
   function(scores,
@@ -32,16 +45,13 @@ fitQmat <-
     colnames(scores) <- paste0("V", seq_len(ncol(scores)))
     colnames(scores.test) <- paste0("V", seq_len(ncol(scores.test)))
     
-    count.scores <- plyr::count(scores, vars = colnames(scores))
+    count.scores <- getUniqueAnswersFreqs(scores)
     freq <- count.scores$freq
-    unique.scores <-
-      as.matrix(count.scores[, -ncol(count.scores)])
+    unique.scores <- count.scores$unique.scores
     
-    count.scores.test <-
-      plyr::count(scores.test, vars = colnames(scores.test))
+    count.scores.test <- getUniqueAnswersFreqs(scores.test)
     freq.test <- count.scores.test$freq
-    unique.scores.test <-
-      as.matrix(count.scores.test[, -ncol(count.scores.test)])
+    unique.scores.test <- count.scores.test$unique.scores
     
     questions.no <- ncol(unique.scores)
     
@@ -67,9 +77,8 @@ fitQmat <-
       qmat <- round(qmat, ndig)
       
     } else {
-      if(nrow(qmat) == concepts.no) stop("")
-      if(ncol(qmat) == questions.no) stop("")
-      qmat <- t(qmat)
+      if(nrow(qmat) != concepts.no) stop("Number of rows in qmat must match concepts.no")
+      if(ncol(qmat) != questions.no) stop("Number of columns in qmat must match the number of questions.")
     }
     
     current.error <-
@@ -152,6 +161,13 @@ fitQmat <-
 #' @export
 #'
 #' @examples
+#'
+#' library(ltm)
+#' data("WIRS") 
+#' scores <- getUniqueAnswersFreqs(WIRS)
+#' qmat <- fitQmat(WIRS, concepts.no = 2, qmat = matrix(1, ncol(WIRS), nrow = 2))$final.mat
+#' getQError(qmat, scores$unique.scores, scores$freq)
+#'
 getQError <- function(qmat, unique.scores, freq) {
   n.co <- nrow(qmat)
   
@@ -172,4 +188,41 @@ getQError <- function(qmat, unique.scores, freq) {
     a <- unique.scores[i, ]
     min(colSums(abs(a - idr))) * freq[[i]]
   }))
+}
+
+
+#' Create frequency of the answers patterns for given dataset.
+#'
+#' @param scores data.frame with scores.
+#'
+#' @return
+#' 
+#' List with three elements:
+#' \itemize{
+#'  \item{"count.scores"}{data frame with all answers patterns with a frequency column.}
+#'  \item{"unique.scores"}{data frame with patterns without frequencies.}
+#'  \item{"freq"}{a vector with frequencies of given pattern.}
+#' }
+#' 
+#' @details This function mith be usefull for calculating q-error using \code{\link{getQError}} function.
+#' 
+#' @export
+#'
+#' @examples
+#' library(ltm)
+#' data("WIRS") 
+#' scores <- getUniqueAnswersFreqs(WIRS)
+#' 
+getUniqueAnswersFreqs <- function(scores) {
+  orgColNames <- colnames(scores)
+  colnames(scores) <- paste0("V", seq_len(ncol(scores)))
+  
+  count.scores <- plyr::count(scores, vars = colnames(scores))
+  freq <- count.scores$freq
+  unique.scores <- as.matrix(count.scores[, -ncol(count.scores)])
+  
+  colnames(unique.scores) <- orgColNames
+  colnames(count.scores)[-ncol(count.scores)] <- orgColNames
+  
+  list(count.scores = count.scores, unique.scores = unique.scores, freq = freq)
 }

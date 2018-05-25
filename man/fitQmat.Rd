@@ -4,14 +4,25 @@
 \alias{fitQmat}
 \title{Fit Q Matrix}
 \usage{
-fitQmat(concepts.no, scores, scores.test, verbose = FALSE)
+fitQmat(scores, scores.test = scores, concepts.no = 2, delta = 0.1,
+  qmat = NULL, niter = 50, init.method = c("NMF", "random"),
+  verbose = FALSE)
 }
 \arguments{
-\item{concepts.no}{number of concepts to fit}
-
 \item{scores}{table containing the students scores}
 
 \item{scores.test}{validation set.}
+
+\item{concepts.no}{number of concepts to fit}
+
+\item{delta}{step size for matrix exploration.}
+
+\item{qmat}{predefined qmatrix. If NULL (default) it will be initialized with one of the predefined methods.}
+
+\item{niter}{maximum number of iteration.}
+
+\item{init.method}{if qmat is null it will be created using one of the two methods - 'NMF'
+is based on Nonnegative Matrix Factorization or 'random' which is a random matrix.}
 
 \item{verbose}{if true, some additional information will be printed.}
 }
@@ -19,5 +30,15 @@ fitQmat(concepts.no, scores, scores.test, verbose = FALSE)
 Fit Q Matrix
 }
 \examples{
+
+library(ltm)
+data("WIRS")
+
+fitQmat(WIRS, verbose = TRUE)
+
+# Predefined matrix initialized with 0
+fitQmat(WIRS, concepts.no = 2, qmat = matrix(0, ncol(WIRS), nrow = 2),verbose = TRUE)
+# Predefined matrix initialized with 1
+fitQmat(WIRS, concepts.no = 2, qmat = matrix(1, ncol(WIRS), nrow = 2),verbose = TRUE)
 
 }

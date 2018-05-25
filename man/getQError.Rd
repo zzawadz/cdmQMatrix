@@ -16,3 +16,12 @@ getQError(qmat, unique.scores, freq)
 \description{
 Get error for given Q-matrix
 }
+\examples{
+
+library(ltm)
+data("WIRS") 
+scores <- getUniqueAnswersFreqs(WIRS)
+qmat <- fitQmat(WIRS, concepts.no = 2, qmat = matrix(1, ncol(WIRS), nrow = 2))$final.mat
+getQError(qmat, scores$unique.scores, scores$freq)
+
+}
